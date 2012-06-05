@@ -4,7 +4,7 @@ use warnings;
 
 use base qw/Class::Data::Inheritable/;
 
-our $VERSION = '0.01';
+our $VERSION = '0.02';
 
 __PACKAGE__->mk_classdata( namespace_regex       => undef );
 __PACKAGE__->mk_classdata( ignore_class_regex    => undef );
@@ -110,6 +110,17 @@ use Term::ANSIColor;
             delete
             rename
         }],
+    );
+};
+
+'Furl::HTTP'->require and do {
+    __PACKAGE__->add_prof(
+        'Furl::HTTP',
+        'request',
+        sub {
+            my($orig, $self, %args) = @_;
+            return sprintf '%s %s', $args{method}, $args{url};
+        },
     );
 };
 
