@@ -4,7 +4,7 @@ use warnings;
 
 use base qw/Class::Data::Inheritable/;
 
-our $VERSION = '0.04';
+our $VERSION = '0.05';
 
 __PACKAGE__->mk_classdata( namespace_regex       => undef );
 __PACKAGE__->mk_classdata( ignore_class_regex    => undef );
@@ -12,6 +12,7 @@ __PACKAGE__->mk_classdata( context_classes_regex => undef );
 __PACKAGE__->mk_classdata( logger => undef );
 __PACKAGE__->mk_classdata( threshold => undef );
 __PACKAGE__->mk_classdata( remove_linefeed => undef );
+__PACKAGE__->mk_classdata( remove_escape_sequences => undef );
 
 __PACKAGE__->mk_classdata( color_time   => 'red' );
 __PACKAGE__->mk_classdata( color_module => 'cyan' );
@@ -249,12 +250,18 @@ sub add_prof {
             my $cb_data;
             if ($callback) {
                 my $v = $callback->($orig, @_);
-                $cb_info = sprintf $v->[0], map { $v->[2]->{$_} } @{$v->[1]};
-                $cb_data = $v->[2];
+                if (ref $v eq "ARRAY") {
+                    $cb_info = sprintf $v->[0], map { $v->[2]->{$_} } @{$v->[1]};
+                    $cb_data = $v->[2];
+                } else {
+                    $cb_info = $v;
+                    $cb_data = {};
+                }
             } else {
                 $cb_info = $method;
                 $cb_data = {};
             }
+            $cb_info =~ s/[[:cntrl:]]//smg if $class->remove_escape_sequences;
             $message .= colored(sprintf(' %s ', $cb_info), $class->color_info);
             $message .= ' | ';
             $message .= colored(sprintf('%s:%d', $package || '', $line || 0), $class->color_call);
@@ -367,6 +374,7 @@ You can change settings.
   Devel::KYTProf->mute($module, $method);
   Devel::KYTProf->unmute($module, $method);
   Devel::KYTProf->remove_linefeed(1);
+  Devel::KYTProf->remove_escape_sequences(1);
 
 =head1 AUTHOR
 
